@@ -1,8 +1,8 @@
---Joey Gao 
+ 
 button_flag = 1
 draw_flag = false
 function love.load()
-love.filesystem.setIdentity("DOODLE")
+	love.filesystem.setIdentity("Desktop/doodle/Notes")
 	MASTER_CLOCK = 0
 	ctrl_clock = 0
 	ctrl_counter = 0
@@ -23,6 +23,10 @@ love.filesystem.setIdentity("DOODLE")
 	scroll_position = 0
 	BP = {{10,110, 556, 589}} --BUTTON POSITIONS!!! IMPORTANT!!!
 	scroll_flag = false
+	tool_wheel_flag = false
+	hover_flag = false
+	eraser_flag = false
+	save_flag = false
 end
 
 function love.update(dt)
@@ -42,44 +46,64 @@ function love.update(dt)
 	if draw_flag == true and love.mouse.isDown(1) then
 		points[#points + 1] = {mouseX, mouseY + scroll_position, colors[button_flag]} 
 	else
+		--ERROR HANDELING: STROKE RECOGNITION
+		if points[#points] ~= "end_stroke" then
+			points[#points + 1] = "end_stroke"
+		end
 		if mouseX >= 10 and mouseX < 110 then
 			if mouseY >= 556 and mouseY <= 589 then
+				draw_flag = false
 				if love.mouse.isDown(1) then
 					button_flag = 1
 				end
+			else
+				draw_flag = true
 			end	
 		end
 		if mouseX >= 110 and mouseX < 210 then
 			if mouseY >= 556 and mouseY <= 589 then
+				draw_flag = false
 				if love.mouse.isDown(1) then
 					button_flag = 2
 				end
+			else
+				draw_flag = true
+			end	
+		end
+		if mouseX >= 210 and mouseX < 310 then
+			if mouseY >= 556 and mouseY <= 589 then
+				draw_flag = false
+				if love.mouse.isDown(1) then
+					button_flag = 3
+				end
+			else
+				draw_flag = true
 			end	
 		end
 		if mouseX >= 310 and mouseX < 410 then
 			if mouseY >= 556 and mouseY <= 589 then
+				draw_flag = false
 				if love.mouse.isDown(1) then
-					button_flag = 3
+					button_flag = 4
 				end
+			else
+				draw_flag = true
 			end	
 		end
 		if mouseX >= 410 and mouseX < 510 then
 			if mouseY >= 556 and mouseY <= 589 then
-				if love.mouse.isDown(1) then
-					button_flag = 4
-				end
-			end	
-		end
-		if mouseX >= 510 and mouseX < 610 then
-			if mouseY >= 556 and mouseY <= 589 then
+				draw_flag = false
 				if love.mouse.isDown(1) then
 					button_flag = 5
 				end
+			else
+				draw_flag = true
 			end	
 		end
 		--SCROLLER
 		if mouseX >= 730 and mouseX <= 800 then
 			if mouseY >= 0 and mouseY <= 600 then
+				draw_flag = false
 				if love.mouse.isDown(1) then
 					if mouseY > scroll_position then
 						scroll_position = scroll_position + scroll_vel * dt
@@ -90,8 +114,17 @@ function love.update(dt)
 					
 					scroll_flag = true
 				end
+			else
+				draw_flag = true
 			end	
 		end
+		if mouseX >= 610 and mouseX < 710 then
+			if mouseY >= 490 and mouseY <= 590 then
+				draw_flag = false
+			else
+				draw_flag = true
+			end
+		end	
 	end --800-70, 0, 70, 600
 	if love.keyboard.isDown("lctrl") then
 		if love.keyboard.isDown("z") then
@@ -114,6 +147,13 @@ function love.update(dt)
 end	
 
 function love.draw()
+
+	for i = 1, (#points-1) do
+		if points[i+1] ~= "end_stroke" and points[i] ~= "end_stroke" then
+			love.graphics.setColor(points[i][3])
+			love.graphics.line(points[i][1], points[i][2] - scroll_position, points[i+1][1], points[i+1][2] - scroll_position)
+		end
+	end	
 	local s0 = love.graphics.getPointSize()
 	local s = love.graphics.getPointSize() + 3
 	love.graphics.setColor(button_color)
@@ -133,17 +173,6 @@ function love.draw()
 	love.graphics.rectangle("line", 310, 556, 100, 33)
 	love.graphics.rectangle("line", 410, 556, 100, 33)
 	love.graphics.setPointSize(s)
-	for i = 1, #points do	
-		if #points == 1 then
-			love.graphics.setColor(points[i][3])
-			love.graphics.points(points[i][1], points[i][2] - scroll_position)
-		else
-			if i > 1 and i < #points then
-				love.graphics.setColor(points[i][3])
-				love.graphics.line(points[i][1], points[i][2] - scroll_position, points[i+1][1], points[i+1][2] - scroll_position)
-			end
-		end
-	end
 	love.graphics.setPointSize(s0)
 	love.graphics.setColor(0,0,0)
 	love.graphics.line(10 + (button_flag - 1) * 100, 556 + 33/2, 10 + button_flag * 100, 556 + 33/2)
@@ -209,8 +238,38 @@ function love.keypressed(k)
 			draw_flag = true
 		end
 	end
-	if k == "rctrl" then
+	if k == "f1" then
+		success = love.window.showMessageBox("some string", os.time(), "error")
 		local screenshot = love.graphics.newScreenshot()
-		screenshot:encode("png", "Notes/" .. os.time() .. ".png")
+		screenshot:encode("png", os.time() .. ".png")
+	end
+	if k == "return" then
+		success = love.window.showMessageBox("Save Result!", "Your notes have been saved as " .. os.time() .. ".png!", "error")
+		local screenshot = love.graphics.newScreenshot()
+		screenshot:encode("png", os.time() .. ".png")
+		love.load()
 	end
 end
+
+function love.keyreleased(j)
+	
+end
+
+function love.mousereleased(m)
+
+end
+
+function love.mousepressed(x,y,n,b)
+	if n == 1 then
+		if x >= 610 and x < 710 then
+			if y >= 490 and y <= 590 then
+				if draw_flag == true then
+					draw_flag = false
+				elseif draw_flag == false then
+					draw_flag = true
+				end
+			end
+		end	
+	end	
+end
+
